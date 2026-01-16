@@ -20,76 +20,69 @@ st.caption("Visualisasi hasil Knowledge Discovery in Databases")
 try:
     df = pd.read_csv("hasil_kdd.csv")
 except FileNotFoundError:
-    st.error("File hasil_kdd.csv tidak ditemukan. Pastikan sudah di-upload ke GitHub.")
+    st.error("File hasil_kdd.csv tidak ditemukan.")
     st.stop()
 
 # ===============================
-# 3. Normalisasi Nama Kolom (ANTI ERROR)
+# 3. Normalisasi Kolom
 # ===============================
 df.columns = df.columns.str.lower().str.strip()
-
-# Cek kolom wajib
-kolom_wajib = {"tahun", "bulan", "nilai"}
-if not kolom_wajib.issubset(df.columns):
-    st.error(
-        f"Dataset harus memiliki kolom: {kolom_wajib}\n\n"
-        f"Kolom yang terdeteksi: {list(df.columns)}"
-    )
-    st.stop()
 
 # ===============================
 # 4. Sidebar Filter
 # ===============================
 st.sidebar.header("🔍 Filter Data")
 
-tahun = st.sidebar.selectbox(
-    "Pilih Tahun",
-    sorted(df["tahun"].unique())
+country = st.sidebar.selectbox(
+    "Pilih Country",
+    sorted(df["country"].unique())
 )
 
-df_filtered = df[df["tahun"] == tahun]
+product = st.sidebar.selectbox(
+    "Pilih Product",
+    sorted(df["product"].unique())
+)
+
+df_filtered = df[
+    (df["country"] == country) &
+    (df["product"] == product)
+]
 
 # ===============================
-# 5. Ringkasan Data (METRIC)
+# 5. METRIC
 # ===============================
-st.subheader("📌 Ringkasan Data")
+st.subheader("📌 Ringkasan Penjualan")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Jumlah Data", len(df_filtered))
+    st.metric("Total Sales", f"{df_filtered['sales'].sum():,.0f}")
 
 with col2:
-    st.metric(
-        "Rata-rata Nilai",
-        round(df_filtered["nilai"].mean(), 2)
-    )
+    st.metric("Total Profit", f"{df_filtered['profit'].sum():,.0f}")
+
+with col3:
+    st.metric("Units Sold", f"{df_filtered['units sold'].sum():,.0f}")
 
 st.divider()
 
 # ===============================
-# 6. Visualisasi
+# 6. VISUALISASI
 # ===============================
-st.subheader("📈 Tren Nilai per Bulan")
+st.subheader("📊 Perbandingan Sales & Profit")
 
-fig = px.line(
+fig = px.bar(
     df_filtered,
-    x="bulan",
-    y="nilai",
-    markers=True,
-    title=f"Tren Nilai Tahun {tahun}"
-)
-
-fig.update_layout(
-    xaxis_title="Bulan",
-    yaxis_title="Nilai",
-    template="plotly_white"
+    x="segment",
+    y=["sales", "profit"],
+    barmode="group",
+    title=f"Sales vs Profit ({country} - {product})"
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
 # ===============================
-# 7. Tabel Data (Opsional)
+# 7. TABEL DATA
 # ===============================
-with st.expander("📄 Lihat Data"):
+with st.expander("📄 Lihat Data Lengkap"):
     st.dataframe(df_filtered, use_container_width=True)
