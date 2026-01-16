@@ -2,25 +2,59 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Dashboard KDD", layout="wide")
+# ===============================
+# 1. Konfigurasi halaman
+# ===============================
+st.set_page_config(
+    page_title="Dashboard KDD",
+    page_icon="📊",
+    layout="wide"
+)
 
-st.title("📊 Dashboard Knowledge Discovery in Database (KDD)")
+st.title("📊 Dashboard KDD")
+st.caption("Visualisasi hasil Knowledge Discovery in Databases")
 
-# Load data
+# ===============================
+# 2. Load dataset
+# ===============================
 df = pd.read_csv("hasil_kdd.csv")
 
-st.subheader("Preview Dataset")
-st.dataframe(df.head())
+# ===============================
+# 3. SIDEBAR FILTER
+# ===============================
+st.sidebar.header("🔍 Filter Data")
 
-st.subheader("Statistik Deskriptif")
-st.write(df.describe())
+tahun = st.sidebar.selectbox(
+    "Pilih Tahun",
+    sorted(df["tahun"].unique())
+)
 
-st.subheader("Visualisasi Data")
+# filter data
+df = df[df["tahun"] == tahun]
 
-num_cols = df.select_dtypes(include="number").columns
+# ===============================
+# 4. METRIC (COLUMNS)
+# ===============================
+st.subheader("📌 Ringkasan Data")
 
-x_col = st.selectbox("Pilih sumbu X", num_cols)
-y_col = st.selectbox("Pilih sumbu Y", num_cols)
+col1, col2 = st.columns(2)
 
-fig = px.scatter(df, x=x_col, y=y_col, title="Scatter Plot Interaktif")
+with col1:
+    st.metric("Jumlah Data", len(df))
+
+with col2:
+    st.metric("Rata-rata Nilai", round(df["nilai"].mean(), 2))
+
+st.divider()
+
+# ===============================
+# 5. VISUALISASI
+# ===============================
+fig = px.line(
+    df,
+    x="bulan",
+    y="nilai",
+    title="Tren Nilai per Bulan"
+)
+
 st.plotly_chart(fig, use_container_width=True)
